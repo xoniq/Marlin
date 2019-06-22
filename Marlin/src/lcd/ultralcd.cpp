@@ -441,7 +441,7 @@ bool MarlinUI::get_blink() {
 
         #endif // HAS_LCD_MENU
 
-        if (!homed && RRK(EN_KEYPAD_F1)) enqueue_and_echo_commands_P(PSTR("G28"));
+        if (!homed && RRK(EN_KEYPAD_F1)) queue.inject_P(PSTR("G28"));
         return true;
       }
 
@@ -1424,6 +1424,10 @@ void MarlinUI::update() {
     set_status_P(msg, -1);
   }
 
+  #if ENABLED(SDSUPPORT)
+    extern bool wait_for_user, wait_for_heatup;
+  #endif
+
   void MarlinUI::abort_print() {
     #if ENABLED(SDSUPPORT)
       wait_for_heatup = wait_for_user = false;
@@ -1441,6 +1445,10 @@ void MarlinUI::update() {
       return_to_status();
     #endif
   }
+
+  #if ANY(PARK_HEAD_ON_PAUSE, SDSUPPORT)
+    #include "../gcode/queue.h"
+  #endif
 
   void MarlinUI::pause_print() {
     #if HAS_LCD_MENU
@@ -1461,9 +1469,9 @@ void MarlinUI::update() {
       #if HAS_SPI_LCD
         lcd_pause_show_message(PAUSE_MESSAGE_PAUSING, PAUSE_MODE_PAUSE_PRINT);  // Show message immediately to let user know about pause in progress
       #endif
-      enqueue_and_echo_commands_front_P(PSTR("M25 P\nM24"));
+      queue.inject_P(PSTR("M25 P\nM24"));
     #elif ENABLED(SDSUPPORT)
-      enqueue_and_echo_commands_P(PSTR("M25"));
+      queue.inject_P(PSTR("M25"));
     #elif defined(ACTION_ON_PAUSE)
       host_action_pause();
     #endif
@@ -1475,7 +1483,7 @@ void MarlinUI::update() {
       wait_for_heatup = wait_for_user = false;
     #endif
     #if ENABLED(SDSUPPORT)
-      if (card.isPaused()) enqueue_and_echo_commands_P(PSTR("M24"));
+      if (card.isPaused()) queue.inject_P(PSTR("M24"));
     #endif
     #ifdef ACTION_ON_RESUME
       host_action_resume();
