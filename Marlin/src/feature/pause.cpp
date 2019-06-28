@@ -1,9 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (C) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
- * Copyright (C) 2011 Camiel Gubbels / Erik van der Zalm
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -683,7 +683,9 @@ void resume_print(const float &slow_load_length/*=0*/, const float &fast_load_le
 
   #if HAS_DISPLAY
     ui.reset_status();
-    ui.return_to_status();
+    #if HAS_LCD_MENU
+      ui.return_to_status();
+    #endif
   #endif
 }
 
