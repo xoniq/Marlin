@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#pragma once
 
 /**
  * Animated boot screen example
@@ -28,7 +29,6 @@
 #define CUSTOM_BOOTSCREEN_FRAME_TIME 100  // (ms)
 
 #define CUSTOM_BOOTSCREEN_BMPWIDTH   128
-#define CUSTOM_BOOTSCREEN_TIMEOUT   2500  // (ms)
 
 const unsigned char custom_start_bmp[] PROGMEM = {
   B00011111,B11111111,B11111111,B11111111,B11111111,B11001111,B11111111,B11111111,B11111111,B10000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,
