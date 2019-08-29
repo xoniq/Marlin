@@ -56,14 +56,6 @@
   #include "../../feature/mixing.h"
 #endif
 
-FORCE_INLINE void _draw_centered_temp(const int16_t temp, const uint8_t tx, const uint8_t ty) {
-  const char *str = i16tostr3(temp);
-  const uint8_t len = str[0] != ' ' ? 3 : str[1] != ' ' ? 2 : 1;
-  lcd_moveto(tx - len * (INFO_FONT_WIDTH) / 2 + 1, ty);
-  lcd_put_u8str(&str[3-len]);
-  lcd_put_wchar(LCD_STR_DEGREE[0]);
-}
-
 #define X_LABEL_POS      3
 #define X_VALUE_POS     11
 #define XYZ_SPACING     37
@@ -105,6 +97,13 @@ FORCE_INLINE void _draw_centered_temp(const int16_t temp, const uint8_t tx, cons
   #define SHOW_ON_STATE false
 #endif
 
+FORCE_INLINE void _draw_centered_temp(const int16_t temp, const uint8_t tx, const uint8_t ty) {
+  const char *str = i16tostr3(temp);
+  const uint8_t len = str[0] != ' ' ? 3 : str[1] != ' ' ? 2 : 1;
+  lcd_put_u8str(tx - len * (INFO_FONT_WIDTH) / 2 + 1, ty, &str[3-len]);
+  lcd_put_wchar(LCD_STR_DEGREE[0]);
+}
+
 FORCE_INLINE void _draw_heater_status(const heater_ind_t heater, const bool blink) {
   #if !HEATER_IDLE_HANDLER
     UNUSED(blink);
@@ -131,27 +130,6 @@ FORCE_INLINE void _draw_heater_status(const heater_ind_t heater, const bool blin
   #else
     const float temp = IFBED(thermalManager.degBed(), thermalManager.degHotend(heater)),
                 target = IFBED(thermalManager.degTargetBed(), thermalManager.degTargetHotend(heater));
-  #endif
-
-  #if HAS_HEATED_CHAMBER
-    FORCE_INLINE void _draw_chamber_status(const bool blink) {
-      const float temp = thermalManager.degChamber(),
-                  target = thermalManager.degTargetChamber();
-      #if !HEATER_IDLE_HANDLER
-        UNUSED(blink);
-      #endif
-      if (PAGE_UNDER(7)) {
-        #if HEATER_IDLE_HANDLER
-          const bool is_idle = false, // thermalManager.chamber_idle.timed_out,
-                     dodraw = (blink || !is_idle);
-        #else
-          constexpr bool dodraw = true;
-        #endif
-        if (dodraw) _draw_centered_temp(target + 0.5, STATUS_CHAMBER_TEXT_X, 7);
-      }
-      if (PAGE_CONTAINS(28 - INFO_FONT_ASCENT, 28 - 1))
-        _draw_centered_temp(temp + 0.5f, STATUS_CHAMBER_TEXT_X, 28);
-    }
   #endif
 
   #if DISABLED(STATUS_HOTEND_ANIM)
@@ -255,6 +233,29 @@ FORCE_INLINE void _draw_heater_status(const heater_ind_t heater, const bool blin
 
 }
 
+#if HAS_HEATED_CHAMBER
+
+  FORCE_INLINE void _draw_chamber_status(const bool blink) {
+    const float temp = thermalManager.degChamber(),
+                target = thermalManager.degTargetChamber();
+    #if !HEATER_IDLE_HANDLER
+      UNUSED(blink);
+    #endif
+    if (PAGE_UNDER(7)) {
+      #if HEATER_IDLE_HANDLER
+        const bool is_idle = false, // thermalManager.chamber_idle.timed_out,
+                   dodraw = (blink || !is_idle);
+      #else
+        constexpr bool dodraw = true;
+      #endif
+      if (dodraw) _draw_centered_temp(target + 0.5, STATUS_CHAMBER_TEXT_X, 7);
+    }
+    if (PAGE_CONTAINS(28 - INFO_FONT_ASCENT, 28 - 1))
+      _draw_centered_temp(temp + 0.5f, STATUS_CHAMBER_TEXT_X, 28);
+  }
+
+#endif
+
 //
 // Before homing, blink '123' <-> '???'.
 // Homed but unknown... '123' <-> '   '.
@@ -262,8 +263,7 @@ FORCE_INLINE void _draw_heater_status(const heater_ind_t heater, const bool blin
 //
 FORCE_INLINE void _draw_axis_value(const AxisEnum axis, const char *value, const bool blink) {
   const uint8_t offs = (XYZ_SPACING) * axis;
-  lcd_moveto(X_LABEL_POS + offs, XYZ_BASELINE);
-  lcd_put_wchar('X' + axis);
+  lcd_put_wchar(X_LABEL_POS + offs, XYZ_BASELINE, 'X' + axis);
   lcd_moveto(X_VALUE_POS + offs, XYZ_BASELINE);
   if (blink)
     lcd_put_u8str(value);
@@ -358,7 +358,7 @@ void MarlinUI::draw_status_screen() {
   #endif
 
   #if DO_DRAW_CHAMBER
-    #if ANIM_HAMBER
+    #if ANIM_CHAMBER
       #define CHAMBER_BITMAP(S) ((S) ? status_chamber_on_bmp : status_chamber_bmp)
     #else
       #define CHAMBER_BITMAP(S) status_chamber_bmp
@@ -427,8 +427,7 @@ void MarlinUI::draw_status_screen() {
               c = '*';
             }
           #endif
-          lcd_moveto(STATUS_FAN_TEXT_X, STATUS_FAN_TEXT_Y);
-          lcd_put_u8str(i16tostr3(thermalManager.fanPercent(spd)));
+          lcd_put_u8str(STATUS_FAN_TEXT_X, STATUS_FAN_TEXT_Y, i16tostr3(thermalManager.fanPercent(spd)));
           lcd_put_wchar(c);
         }
       }
@@ -486,8 +485,7 @@ void MarlinUI::draw_status_screen() {
       #if ENABLED(DOGM_SD_PERCENT)
         if (PAGE_CONTAINS(41, 48)) {
           // Percent complete
-          lcd_moveto(55, 48);
-          lcd_put_u8str(ui8tostr3(progress));
+          lcd_put_u8str(55, 48, ui8tostr3(progress));
           lcd_put_wchar('%');
         }
       #endif
@@ -508,8 +506,7 @@ void MarlinUI::draw_status_screen() {
       duration_t elapsed = print_job_timer.duration();
       bool has_days = (elapsed.value >= 60*60*24L);
       uint8_t len = elapsed.toDigital(buffer, has_days);
-      lcd_moveto(SD_DURATION_X, EXTRAS_BASELINE);
-      lcd_put_u8str(buffer);
+      lcd_put_u8str(SD_DURATION_X, EXTRAS_BASELINE, buffer);
     }
 
   #endif // HAS_PRINT_PROGRESS
@@ -517,10 +514,6 @@ void MarlinUI::draw_status_screen() {
   //
   // XYZ Coordinates
   //
-
-  #define X_LABEL_POS  3
-  #define X_VALUE_POS 11
-  #define XYZ_SPACING 37
 
   #if ENABLED(XYZ_HOLLOW_FRAME)
     #define XYZ_FRAME_TOP 29
@@ -548,8 +541,6 @@ void MarlinUI::draw_status_screen() {
 
         // Two-component mix / gradient instead of XY
 
-        lcd_moveto(X_LABEL_POS, XYZ_BASELINE);
-
         char mixer_messages[12];
         const char *mix_label;
         #if ENABLED(GRADIENT_MIX)
@@ -564,7 +555,7 @@ void MarlinUI::draw_status_screen() {
             mix_label = "Mx";
           }
         sprintf_P(mixer_messages, PSTR("%s %d;%d%% "), mix_label, int(mixer.mix[0]), int(mixer.mix[1]));
-        lcd_put_u8str(mixer_messages);
+        lcd_put_u8str(X_LABEL_POS, XYZ_BASELINE, mixer_messages);
 
       #else
 
@@ -589,28 +580,22 @@ void MarlinUI::draw_status_screen() {
 
   if (PAGE_CONTAINS(EXTRAS_2_BASELINE - INFO_FONT_ASCENT, EXTRAS_2_BASELINE - 1)) {
     set_font(FONT_MENU);
-    lcd_moveto(3, EXTRAS_2_BASELINE);
-    lcd_put_wchar(LCD_STR_FEEDRATE[0]);
+    lcd_put_wchar(3, EXTRAS_2_BASELINE, LCD_STR_FEEDRATE[0]);
 
     set_font(FONT_STATUSMENU);
-    lcd_moveto(12, EXTRAS_2_BASELINE);
-    lcd_put_u8str(i16tostr3(feedrate_percentage));
+    lcd_put_u8str(12, EXTRAS_2_BASELINE, i16tostr3(feedrate_percentage));
     lcd_put_wchar('%');
 
     //
     // Filament sensor display if SD is disabled
     //
     #if ENABLED(FILAMENT_LCD_DISPLAY) && DISABLED(SDSUPPORT)
-      lcd_moveto(56, EXTRAS_2_BASELINE);
-      lcd_put_u8str(wstring);
-      lcd_moveto(102, EXTRAS_2_BASELINE);
-      lcd_put_u8str(mstring);
+      lcd_put_u8str(56, EXTRAS_2_BASELINE, wstring);
+      lcd_put_u8str(102, EXTRAS_2_BASELINE, mstring);
       lcd_put_wchar('%');
       set_font(FONT_MENU);
-      lcd_moveto(47, EXTRAS_2_BASELINE);
-      lcd_put_wchar(LCD_STR_FILAM_DIA[0]); // lcd_put_u8str_P(PSTR(LCD_STR_FILAM_DIA));
-      lcd_moveto(93, EXTRAS_2_BASELINE);
-      lcd_put_wchar(LCD_STR_FILAM_MUL[0]);
+      lcd_put_wchar(47, EXTRAS_2_BASELINE, LCD_STR_FILAM_DIA[0]); // lcd_put_u8str_P(PSTR(LCD_STR_FILAM_DIA));
+      lcd_put_wchar(93, EXTRAS_2_BASELINE, LCD_STR_FILAM_MUL[0]);
     #endif
   }
 

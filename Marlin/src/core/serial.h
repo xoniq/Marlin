@@ -21,9 +21,7 @@
  */
 #pragma once
 
-#include "../inc/MarlinConfigPre.h"
-#include "../core/minmax.h"
-#include HAL_PATH(../HAL, HAL.h)
+#include "../inc/MarlinConfig.h"
 
 /**
  * Define debug bit-masks
@@ -57,10 +55,12 @@ extern uint8_t marlin_debug_flags;
     if (!serial_port_index || serial_port_index == SERIAL_BOTH) (void)MYSERIAL0.WHAT(V); \
     if ( serial_port_index) (void)MYSERIAL1.WHAT(V); \
   }while(0)
+  #define SERIAL_ASSERT(P)      if(serial_port_index!=(P)){ debugger(); }
 #else
   #define _PORT_REDIRECT(n,p)   NOOP
   #define _PORT_RESTORE(n)      NOOP
   #define SERIAL_OUT(WHAT, V...) (void)MYSERIAL0.WHAT(V)
+  #define SERIAL_ASSERT(P)      NOOP
 #endif
 
 #define PORT_REDIRECT(p)        _PORT_REDIRECT(1,p)
@@ -68,11 +68,11 @@ extern uint8_t marlin_debug_flags;
 
 #define SERIAL_CHAR(x)          SERIAL_OUT(write, x)
 #define SERIAL_ECHO(x)          SERIAL_OUT(print, x)
-#define SERIAL_ECHO_F(V...)      SERIAL_OUT(print, V)
+#define SERIAL_ECHO_F(V...)     SERIAL_OUT(print, V)
 #define SERIAL_ECHOLN(x)        SERIAL_OUT(println, x)
 #define SERIAL_PRINT(x,b)       SERIAL_OUT(print, x, b)
 #define SERIAL_PRINTLN(x,b)     SERIAL_OUT(println, x, b)
-#define SERIAL_PRINTF(V...)      SERIAL_OUT(printf, V)
+#define SERIAL_PRINTF(V...)     SERIAL_OUT(printf, V)
 #define SERIAL_FLUSH()          SERIAL_OUT(flush)
 
 #if TX_BUFFER_SIZE > 0
@@ -184,5 +184,5 @@ void print_bin(const uint16_t val);
 
 void print_xyz(PGM_P const prefix, PGM_P const suffix, const float x, const float y, const float z);
 void print_xyz(PGM_P const prefix, PGM_P const suffix, const float xyz[]);
-#define SERIAL_POS(SUFFIX,VAR) do { print_xyz(PSTR("  " STRINGIFY(VAR) "="), PSTR(" : " SUFFIX "\n"), VAR); } while(0)
-#define SERIAL_XYZ(PREFIX,V...) do { print_xyz(PSTR(PREFIX), nullptr, V); } while(0)
+#define SERIAL_POS(SUFFIX,VAR) do { print_xyz(PSTR("  " STRINGIFY(VAR) "="), PSTR(" : " SUFFIX "\n"), VAR); }while(0)
+#define SERIAL_XYZ(PREFIX,V...) do { print_xyz(PSTR(PREFIX), nullptr, V); }while(0)
