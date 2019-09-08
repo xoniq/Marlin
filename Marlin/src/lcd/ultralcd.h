@@ -306,6 +306,8 @@ public:
 
     #if HAS_SPI_LCD
 
+      static millis_t next_button_update_ms;
+
       static bool detected();
 
       static LCDViewAction lcdDrawUpdate;
@@ -340,7 +342,7 @@ public:
           static millis_t progress_bar_ms;  // Start time for the current progress bar cycle
           static void draw_progress_bar(const uint8_t percent);
           #if PROGRESS_MSG_EXPIRE > 0
-            static millis_t MarlinUI::expire_status_ms; // = 0
+            static millis_t expire_status_ms; // = 0
             static inline void reset_progress_bar_timeout() { expire_status_ms = 0; }
           #endif
         #endif
@@ -530,10 +532,6 @@ public:
     #if HAS_SLOW_BUTTONS
       static volatile uint8_t slow_buttons;
       static uint8_t read_slow_buttons();
-    #endif
-    #if ENABLED(TOUCH_BUTTONS)
-      static volatile uint8_t touch_buttons;
-      static uint8_t read_touch_buttons();
     #endif
 
     static void update_buttons();
