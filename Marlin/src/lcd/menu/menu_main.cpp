@@ -73,7 +73,6 @@ void menu_configuration();
 #endif
 
 #if HAS_CUTTER
-  #include "../../feature/spindle_laser.h"
   void menu_spindle_laser();
 #endif
 
@@ -103,7 +102,7 @@ void menu_main() {
         MenuItem_confirm::select_screen(
           GET_TEXT(MSG_BUTTON_STOP), GET_TEXT(MSG_BACK),
           ui.abort_print, ui.goto_previous_screen,
-          GET_TEXT(MSG_STOP_PRINT), (PGM_P)nullptr, PSTR("?")
+          GET_TEXT(MSG_STOP_PRINT), (const char *)nullptr, PSTR("?")
         );
       });
     #endif
